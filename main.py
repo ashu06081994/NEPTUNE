@@ -2,7 +2,9 @@ import base64
 import csv
 import logging
 from google.cloud import bigquery
-from flask import escape, Flask, request
+from flask import Flask, request
+from markupsafe import escape
+
 
 BQ_TABLE_ID = "playground-s-11-a324b2b9.Neptune.cust_data"
 bq_client = bigquery.Client()
