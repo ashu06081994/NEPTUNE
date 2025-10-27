@@ -2,33 +2,37 @@ import base64
 import csv
 import logging
 from google.cloud import bigquery
-from flask import Flask, request
+from flask import escape, Flask, request
 
-# BigQuery setup
 BQ_TABLE_ID = "playground-s-11-a324b2b9.Neptune.cust_data"
 bq_client = bigquery.Client()
 
 def pubsub_to_bq(request):
     """
-    Cloud Function HTTP endpoint triggered by Pub/Sub push.
-    Inserts CSV messages into BigQuery.
+    HTTP Cloud Function triggered by Pub/Sub push.
     """
     try:
-        envelope = request.get_json()
-        if not envelope:
-            msg = "No Pub/Sub message received"
-            logging.error(msg)
-            return msg, 400
+        # Ensure request is JSON
+        envelope = request.get_json(silent=True)
+        if envelope is None:
+            logging.error("No JSON payload received")
+            return "Bad Request: No JSON", 400
 
         if 'message' not in envelope:
-            msg = "Invalid Pub/Sub message format"
-            logging.error(msg)
-            return msg, 400
+            logging.error(f"Invalid Pub/Sub message format: {envelope}")
+            return "Bad Request: Missing 'message' field", 400
 
-        pubsub_message = base64.b64decode(envelope['message']['data']).decode('utf-8').strip()
+        message = envelope['message']
+
+        # Decode base64 data
+        if 'data' not in message:
+            logging.error(f"No data in message: {message}")
+            return "Bad Request: Missing 'data' field", 400
+
+        pubsub_message = base64.b64decode(message['data']).decode('utf-8').strip()
         logging.info(f"Received message: {pubsub_message}")
 
-        # Parse CSV message
+        # Parse CSV
         reader = csv.reader([pubsub_message])
         for row in reader:
             if len(row) != 7:
@@ -45,7 +49,6 @@ def pubsub_to_bq(request):
                 "actionby": row[6]
             }
 
-            # Insert into BigQuery
             errors = bq_client.insert_rows_json(BQ_TABLE_ID, [row_dict])
             if errors:
                 logging.error(f"BigQuery insert errors: {errors}")
@@ -56,4 +59,4 @@ def pubsub_to_bq(request):
 
     except Exception as e:
         logging.exception(f"Error processing message: {e}")
-        return f"Error: {e}", 500
+        return f"Internal Server Error: {escape(str(e))}", 500
