@@ -8,7 +8,7 @@ app = Flask(__name__)
 table_id = "Neptune.rawmessages"  # BigQuery table
 
 @app.route("/", methods=["POST"])
-def pubsub_to_bq():
+def pubsub_to_bq(request):
     envelope = request.get_json(silent=True)
     if envelope is None:
         logging.error("No JSON payload received")
