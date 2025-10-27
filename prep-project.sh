@@ -1,10 +1,19 @@
 
-# creating the topic in current project
-gcloud pubsub topics create neptune-activities
+# deploying cloud function
+gcloud functions deploy pubsub_to_bq \
+    --runtime python310 \
+    --trigger-http \
+    --entry-point pubsub_to_bq \
+    --project $GOOGLE_CLOUD_PROJECT \
+    --region us-central1 \
+    --source . \
+    --allow-unauthenticated
+    
+sleep 240
 
-#creating the subscription in current project
-gcloud pubsub subscriptions create neptune-activities-test --topic neptune-activities
-
-#attaching the above subscription to neptune project topic to get the data
-
-gcloud pubsub subscriptions create neptune-activities --topic projects/moonbank-neptune/topics/activities --push-endpoint=https://pubsub.googleapis.com/v1/projects/$GOOGLE_CLOUD_PROJECT/topics/neptune-activities:publish 
+#creating the subscription in current project to push data to bq
+gcloud pubsub subscriptions create neptune-activities-push \
+    --topic projects/moonbank-neptune/topics/activities \
+    --push-endpoint=https://us-central1-$GOOGLE_CLOUD_PROJECT.cloudfunctions.net/pubsub_to_bq \
+    --ack-deadline=30 \
+    --project $GOOGLE_CLOUD_PROJECT
