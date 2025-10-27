@@ -8,7 +8,7 @@ from google.cloud import bigquery
 table_id = "neptune.rawmessages"
 
 
-def pubsub_to_bigquery(event, context):
+def pubsub_to_bq(event, context):
     pubsub_message = base64.b64decode(event['data']).decode('utf-8')
     print("Row To Insert: " + pubsub_message)
     client = bigquery.Client()
