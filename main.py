@@ -1,8 +1,3 @@
-# Project Neptune Starter Code
-# Assumes a dataset called neptune exists
-# Assumes a table call rawmessages
-# rawmessages schema - single column:  message:string
-# TODO - break out based on schema
 import base64
 from google.cloud import bigquery
 table_id = "neptune.rawmessages"
