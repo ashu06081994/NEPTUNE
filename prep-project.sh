@@ -1,16 +1,21 @@
+
+#setting the service account
 PROJECT_ID=$(gcloud config get-value project)
 export PROJECT_NUMBER=$(gcloud projects list --filter="$PROJECT_ID" --format="value(PROJECT_NUMBER)")
 export serviceAccount=""$PROJECT_NUMBER"-compute@developer.gserviceaccount.com"
 
-
+#enabling the api's
 
 gcloud services enable cloudfunctions.googleapis.com
 gcloud services enable run.googleapis.com
 gcloud services enable cloudbuild.googleapis.com
 gcloud services enable eventarc.googleapis.com
 
+#creating the bq table
 bq mk neptune
 bq mk --schema message:STRING -t neptune.rawmessages
+
+#creating the topic and subscription
 
 gcloud pubsub topics create activities-topic --project=$GOOGLE_CLOUD_PROJECT
 
@@ -19,13 +24,7 @@ gcloud pubsub subscriptions create activities-subscription \
     --topic=projects/moonbank-neptune/topics/activities \
     --push-endpoint="https://pubsub.googleapis.com/v1/projects/$GOOGLE_CLOUD_PROJECT/topics/activities-topic:publish"  
 
-    
-gcloud functions deploy processActivities \
-    --runtime python310 \
-    --trigger-topic activities-topic \
-    --entry-point process_message \
-    --project=playground-s-11-a324b2b9 \
-    --region=us-central1
+# deploying the cloud function
 
     gcloud functions deploy processActivities \     
            --runtime python310 \    
